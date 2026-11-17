@@ -1,17 +1,10 @@
-from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
-from langchain.vectorstores import PGVector
-from langchain.embeddings import OpenAIEmbeddings
+"""Return cited evidence, not fabricated model-generated answers."""
+from dataclasses import asdict
+from app.retrieval import Index
 
-def ask_question(query):
-    db = PGVector(
-        connection_string="postgresql://user:pass@localhost:5432/rag",
-        embedding_function=OpenAIEmbeddings()
-    )
-
-    qa = RetrievalQA.from_chain_type(
-        llm=ChatOpenAI(),
-        retriever=db.as_retriever()
-    )
-
-    return qa.run(query)
+def ask_question(query, db_path="index.sqlite3", k=3):
+    if not isinstance(query, str) or not query.strip() or len(query) > 2000:
+        raise ValueError("Query must contain 1–2000 characters")
+    hits = Index(db_path).search(query, k)
+    return {"mode": "retrieval_only", "status": "evidence_found" if hits else "no_evidence",
+            "evidence": [asdict(hit) for hit in hits]}

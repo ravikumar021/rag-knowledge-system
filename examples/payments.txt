@@ -1,0 +1,2 @@
+Payment retry policy
+Use a stable idempotency key for retries of the same payment request. Reject reuse of a key with a different request payload. Commit the payment record and an outbox event in the same database transaction. An outbox consumer may deliver an event more than once; consumers must deduplicate by event ID.
